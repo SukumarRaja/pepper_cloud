@@ -54,7 +54,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
     final DateTime? picked = await showDatePicker(
       context: context,
       initialDate: _dueDate ?? DateTime.now(),
-      firstDate: DateTime(2000),
+      firstDate: DateTime.now(),
       lastDate: DateTime(2100),
     );
     if (picked != null && picked != _dueDate) {
@@ -113,7 +113,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
             title: task.title,
             description: task.description,
             dueDate: task.dueDate!.toIso8601String(),
-            isActive: !task.isCompleted,
+            isActive: task.isCompleted,
           ),
         );
       } else {
@@ -124,7 +124,7 @@ class _TaskFormPageState extends State<TaskFormPage> {
             title: task.title,
             description: task.description,
             dueDate: task.dueDate!.toIso8601String(),
-            isActive: !task.isCompleted,
+            isActive: task.isCompleted,
           ),
         );
       }

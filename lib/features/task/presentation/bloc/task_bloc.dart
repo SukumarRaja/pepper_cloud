@@ -12,6 +12,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     on<CreateTask>(_onCreateTask);
     on<UpdateTask>(_onUpdateTask);
     on<DeleteTask>(_onDeleteTask);
+    on<ToggleTaskActive>(_onToggle);
   }
 
   Future<void> _onFetchTasks(FetchTask event, Emitter<TaskState> emit) async {
@@ -23,6 +24,8 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
       final res = await service.getTask(
         page: event.page,
         limit: event.limit,
+        isCompleted: event.isCompleted,
+        dueDate: event.dueDate?.toIso8601String(),
         search: event.search,
       );
 
@@ -47,7 +50,7 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
   Future<void> _onCreateTask(CreateTask event, Emitter<TaskState> emit) async {
     try {
       await service.createTask(
-        taskData: {
+        body: {
           'title': event.title,
           'description': event.description,
           'is_completed': event.isActive,
@@ -71,14 +74,13 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
 
   Future<void> _onUpdateTask(UpdateTask event, Emitter<TaskState> emit) async {
     try {
-      print("kljklj ${event.id}");
       await service.updateTask(
         id: event.id,
-        taskData: {
+        body: {
           'title': event.title,
           'description': event.description,
           'due_date': event.dueDate,
-          'is_active': event.isActive,
+          'is_completed': event.isActive,
         },
       );
       emit(TaskOperationSuccess('Task updated successfully'));
@@ -114,83 +116,23 @@ class TaskBloc extends Bloc<TaskEvent, TaskState> {
     }
   }
 
-  // Future<void> _onCreateStop(CreateStop event, Emitter<RouteStopState> emit) async {
-  //   try {
-  //     final payload = m.CreateStopPayload(
-  //       stop_name: event.stopName,
-  //       latitude: event.latitude,
-  //       longitude: event.longitude,
-  //       is_pickup: event.isPickup,
-  //       pickup_time: event.pickupTime,
-  //       drop_time: event.dropTime,
-  //     );
-  //     final res = await service.createStop(payload: payload);
-  //     if (res.success) {
-  //       emit(RouteStopOperationSuccess(res.message ?? 'Stop created'));
-  //       final list = await service.list(page: 1, limit: 10, search: null);
-  //       emit(RouteStopLoaded(stops: list.data, pagination: list.pagination));
-  //     } else {
-  //       emit(RouteStopError(res.message ?? 'Failed to create stop'));
-  //     }
-  //   } catch (e) {
-  //     emit(RouteStopError(ErrorHandler.handleError(e)));
-  //     final list = await service.list(page: 1, limit: 10, search: null);
-  //     emit(RouteStopLoaded(stops: list.data, pagination: list.pagination));
-  //   }
-  // }
-  //
-  // Future<void> _onUpdateStop(UpdateStop event, Emitter<RouteStopState> emit) async {
-  //   try {
-  //     final payload = m.UpdateStopPayload(
-  //       stop_name: event.stopName,
-  //       latitude: event.latitude,
-  //       longitude: event.longitude,
-  //       is_pickup: event.isPickup,
-  //       pickup_time: event.pickupTime,
-  //       drop_time: event.dropTime,
-  //     );
-  //     final resp = await service.updateStop(stopId: event.stopId, payload: payload);
-  //     if (resp.success) {
-  //       emit(RouteStopOperationSuccess('Stop updated'));
-  //       final list = await service.list(page: 1, limit: 10, search: null);
-  //       emit(RouteStopLoaded(stops: list.data, pagination: list.pagination));
-  //     } else {
-  //       emit(RouteStopError(resp.message ?? 'Failed to update stop'));
-  //     }
-  //   } catch (e) {
-  //     emit(RouteStopError(ErrorHandler.handleError(e)));
-  //     final list = await service.list(page: 1, limit: 10, search: null);
-  //     emit(RouteStopLoaded(stops: list.data, pagination: list.pagination));
-  //   }
-  // }
-  //
-  // Future<void> _onToggleStopActive(ToggleStopActive event, Emitter<RouteStopState> emit) async {
-  //   try {
-  //     final resp = await service.toggleActive(stopId: event.stopId, body: {'is_active': event.isActive});
-  //     if (resp.success) {
-  //       emit(RouteStopOperationSuccess(resp.message ?? 'Stop status updated'));
-  //       final list = await service.list(page: 1, limit: 10, search: null);
-  //       emit(RouteStopLoaded(stops: list.data, pagination: list.pagination));
-  //     } else {
-  //       emit(RouteStopError(resp.message ?? 'Failed to update stop status'));
-  //     }
-  //   } catch (e) {
-  //     emit(RouteStopError(ErrorHandler.handleError(e)));
-  //   }
-  // }
-  //
-  // Future<void> _onDeleteStop(DeleteStop event, Emitter<RouteStopState> emit) async {
-  //   try {
-  //     final resp = await service.deleteStop(stopId: event.stopId);
-  //     if (resp.success) {
-  //       emit(RouteStopOperationSuccess('Stop deleted'));
-  //       final list = await service.list(page: 1, limit: 10, search: null);
-  //       emit(RouteStopLoaded(stops: list.data, pagination: list.pagination));
-  //     } else {
-  //       emit(RouteStopError(resp.message ?? 'Failed to delete stop'));
-  //     }
-  //   } catch (e) {
-  //     emit(RouteStopError(ErrorHandler.handleError(e)));
-  //   }
-  // }
+  Future<void> _onToggle(
+    ToggleTaskActive event,
+    Emitter<TaskState> emit,
+  ) async {
+    try {
+      final res = await service.patchTask(
+        id: event.id,
+        body: {'is_active': event.isActive},
+      );
+      if (res.status == 'success') {
+        emit(TaskOperationSuccess(res.message));
+        add(FetchTask(page: 1, limit: 10));
+      } else {
+        emit(TaskError(res.message));
+      }
+    } catch (e) {
+      emit(TaskError("An unexpected error occurred"));
+    }
+  }
 }

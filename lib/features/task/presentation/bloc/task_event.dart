@@ -4,8 +4,16 @@ class FetchTask extends TaskEvent {
   final int page;
   final int limit;
   final String? search;
+  final bool? isCompleted;
+  final DateTime? dueDate;
 
-  FetchTask({this.page = 1, this.limit = 10, this.search});
+  FetchTask({
+    this.page = 1,
+    this.limit = 10,
+    this.search,
+    this.dueDate,
+    this.isCompleted,
+  });
 }
 
 class CreateTask extends TaskEvent {
@@ -39,10 +47,10 @@ class UpdateTask extends TaskEvent {
 }
 
 class ToggleTaskActive extends TaskEvent {
-  final int stopId;
+  final int id;
   final bool isActive;
 
-  ToggleTaskActive({required this.stopId, required this.isActive});
+  ToggleTaskActive({required this.id, required this.isActive});
 }
 
 class DeleteTask extends TaskEvent {
